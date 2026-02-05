@@ -1,0 +1,137 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* CSS Variables for theme */
+:root {
+  --background: 248 250 252;
+  --foreground: 15 23 42;
+  --card: 255 255 255;
+  --card-foreground: 15 23 42;
+  --border: 226 232 240;
+  --input: 226 232 240;
+  --ring: 99 102 241;
+}
+
+.dark {
+  --background: 15 23 42;
+  --foreground: 248 250 252;
+  --card: 30 41 59;
+  --card-foreground: 248 250 252;
+  --border: 51 65 85;
+  --input: 51 65 85;
+  --ring: 99 102 241;
+}
+
+/* Base styles */
+* {
+  border-color: rgb(var(--border));
+}
+
+body {
+  background-color: rgb(var(--background));
+  color: rgb(var(--foreground));
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgb(var(--border));
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgb(148 163 184);
+}
+
+/* Focus styles */
+.focus-ring {
+  @apply focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 focus:ring-offset-surface-900;
+}
+
+/* Transitions */
+.transition-base {
+  @apply transition-all duration-200 ease-out;
+}
+
+/* Card styles */
+@layer components {
+  .card {
+    @apply bg-surface-800 border border-surface-700 rounded-lg shadow-soft;
+  }
+
+  .light .card {
+    @apply bg-white border-surface-200;
+  }
+
+  .card-hover {
+    @apply hover:border-surface-600 hover:shadow-soft-md transition-base;
+  }
+
+  .light .card-hover {
+    @apply hover:border-surface-300;
+  }
+
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-base focus-ring disabled:opacity-50 disabled:pointer-events-none;
+  }
+
+  .btn-primary {
+    @apply btn bg-primary-600 text-white hover:bg-primary-700 active:bg-primary-800;
+  }
+
+  .btn-secondary {
+    @apply btn bg-surface-700 text-surface-200 hover:bg-surface-600 active:bg-surface-500 border border-surface-600;
+  }
+
+  .light .btn-secondary {
+    @apply bg-surface-100 text-surface-700 hover:bg-surface-200 border-surface-300;
+  }
+
+  .btn-ghost {
+    @apply btn bg-transparent text-surface-300 hover:bg-surface-700 hover:text-surface-100;
+  }
+
+  .light .btn-ghost {
+    @apply text-surface-600 hover:bg-surface-100 hover:text-surface-900;
+  }
+
+  .btn-danger {
+    @apply btn bg-red-600 text-white hover:bg-red-700 active:bg-red-800;
+  }
+
+  .input {
+    @apply w-full px-3 py-2 text-sm bg-surface-800 border border-surface-600 rounded-lg placeholder:text-surface-500 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-base;
+  }
+
+  .light .input {
+    @apply bg-white border-surface-300 text-surface-900 placeholder:text-surface-400;
+  }
+
+  .label {
+    @apply block text-sm font-medium text-surface-300 mb-1.5;
+  }
+
+  .light .label {
+    @apply text-surface-700;
+  }
+}
+
+/* Checkbox styles */
+input[type="checkbox"] {
+  @apply w-4 h-4 rounded border-surface-600 bg-surface-700 text-primary-600 focus:ring-primary-500 focus:ring-offset-surface-900;
+}
+
+/* Selection */
+::selection {
+  background-color: rgb(99 102 241 / 0.3);
+}
