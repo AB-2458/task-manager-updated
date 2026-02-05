@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import toast from 'react-hot-toast';
 import { useAuth } from '../context/AuthContext';
-import { UserPlus, Mail, Lock, Loader2, AlertCircle, CheckCircle } from 'lucide-react';
+import { Button } from '../components/Button';
+import { UserPlus, Mail, Lock, AlertCircle, CheckCircle } from 'lucide-react';
 
 export function RegisterPage() {
     const [email, setEmail] = useState('');
@@ -39,6 +41,7 @@ export function RegisterPage() {
             setIsLoading(false);
         } else {
             setSuccess(true);
+            toast.success('Account created successfully!');
             // Auto navigate after showing success
             setTimeout(() => {
                 navigate('/login');
@@ -153,20 +156,14 @@ export function RegisterPage() {
                         </div>
 
                         {/* Submit Button */}
-                        <button
+                        <Button
                             type="submit"
-                            disabled={isLoading}
-                            className="btn-primary w-full py-2.5"
+                            isLoading={isLoading}
+                            loadingText="Creating account..."
+                            className="w-full py-2.5"
                         >
-                            {isLoading ? (
-                                <>
-                                    <Loader2 className="w-4 h-4 animate-spin" />
-                                    Creating account...
-                                </>
-                            ) : (
-                                'Create account'
-                            )}
-                        </button>
+                            Create account
+                        </Button>
                     </form>
 
                     {/* Login Link */}

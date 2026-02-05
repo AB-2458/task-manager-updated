@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
+import toast from 'react-hot-toast';
 import { useAuth } from '../context/AuthContext';
-import { LogIn, Mail, Lock, Loader2, AlertCircle } from 'lucide-react';
+import { Button } from '../components/Button';
+import { LogIn, Mail, Lock, AlertCircle } from 'lucide-react';
 
 export function LoginPage() {
     const [email, setEmail] = useState('');
@@ -27,6 +29,7 @@ export function LoginPage() {
             setError(error.message);
             setIsLoading(false);
         } else {
+            toast.success('Welcome back!');
             navigate(from, { replace: true });
         }
     };
@@ -95,20 +98,14 @@ export function LoginPage() {
                         </div>
 
                         {/* Submit Button */}
-                        <button
+                        <Button
                             type="submit"
-                            disabled={isLoading}
-                            className="btn-primary w-full py-2.5"
+                            isLoading={isLoading}
+                            loadingText="Signing in..."
+                            className="w-full py-2.5"
                         >
-                            {isLoading ? (
-                                <>
-                                    <Loader2 className="w-4 h-4 animate-spin" />
-                                    Signing in...
-                                </>
-                            ) : (
-                                'Sign in'
-                            )}
-                        </button>
+                            Sign in
+                        </Button>
                     </form>
 
                     {/* Register Link */}

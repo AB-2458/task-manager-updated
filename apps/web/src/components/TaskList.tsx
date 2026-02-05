@@ -1,6 +1,8 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { Task } from '../types';
-import { Plus, Check, Trash2, Circle, CheckCircle2 } from 'lucide-react';
+import { Button } from './Button';
+import { TasksEmptyState } from './EmptyState';
+import { Plus, Check, Trash2, Circle } from 'lucide-react';
 
 interface TaskListProps {
     tasks: Task[];
@@ -11,12 +13,17 @@ interface TaskListProps {
 
 export function TaskList({ tasks, onCreateTask, onToggleTask, onDeleteTask }: TaskListProps) {
     const [newTaskTitle, setNewTaskTitle] = useState('');
+    const [isCreating, setIsCreating] = useState(false);
+    const inputRef = useRef<HTMLInputElement>(null);
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (newTaskTitle.trim()) {
-            onCreateTask(newTaskTitle.trim());
+            setIsCreating(true);
+            await onCreateTask(newTaskTitle.trim());
             setNewTaskTitle('');
+            setIsCreating(false);
+            inputRef.current?.focus();
         }
     };
 
@@ -36,25 +43,30 @@ export function TaskList({ tasks, onCreateTask, onToggleTask, onDeleteTask }: Ta
             {/* Add Task Form */}
             <form onSubmit={handleSubmit} className="flex gap-2">
                 <input
+                    ref={inputRef}
                     type="text"
                     value={newTaskTitle}
                     onChange={(e) => setNewTaskTitle(e.target.value)}
                     placeholder="Add a new task..."
                     className="input flex-1"
+                    disabled={isCreating}
                 />
-                <button type="submit" className="btn-primary" disabled={!newTaskTitle.trim()}>
-                    <Plus className="w-4 h-4" />
+                <Button
+                    type="submit"
+                    isLoading={isCreating}
+                    loadingText="Adding..."
+                    disabled={!newTaskTitle.trim()}
+                    leftIcon={<Plus className="w-4 h-4" />}
+                >
                     <span className="hidden sm:inline">Add Task</span>
-                </button>
+                    <span className="sm:hidden">Add</span>
+                </Button>
             </form>
 
             {/* Tasks List */}
             <div className="space-y-2">
                 {tasks.length === 0 ? (
-                    <div className="text-center py-12 text-surface-500">
-                        <CheckCircle2 className="w-12 h-12 mx-auto mb-3 opacity-50" />
-                        <p>No tasks yet. Add your first task above!</p>
-                    </div>
+                    <TasksEmptyState onAddTask={() => inputRef.current?.focus()} />
                 ) : (
                     <>
                         {/* Pending Tasks */}
@@ -98,6 +110,12 @@ interface TaskItemProps {
 
 function TaskItem({ task, onToggle, onDelete }: TaskItemProps) {
     const [isHovered, setIsHovered] = useState(false);
+    const [isDeleting, setIsDeleting] = useState(false);
+
+    const handleDelete = async () => {
+        setIsDeleting(true);
+        await onDelete();
+    };
 
     return (
         <div
@@ -107,6 +125,7 @@ function TaskItem({ task, onToggle, onDelete }: TaskItemProps) {
                     ? 'bg-surface-800/50 border-surface-700'
                     : 'bg-surface-800 border-surface-700 hover:border-surface-600 card-hover'
                 }
+        ${isDeleting ? 'opacity-50 pointer-events-none' : ''}
       `}
             onMouseEnter={() => setIsHovered(true)}
             onMouseLeave={() => setIsHovered(false)}
@@ -140,8 +159,9 @@ function TaskItem({ task, onToggle, onDelete }: TaskItemProps) {
 
             {/* Delete button */}
             <button
-                onClick={onDelete}
-                className="opacity-0 group-hover:opacity-100 p-1.5 rounded text-surface-500 hover:text-red-400 hover:bg-red-500/10 transition-all"
+                onClick={handleDelete}
+                disabled={isDeleting}
+                className="opacity-0 group-hover:opacity-100 p-1.5 rounded text-surface-500 hover:text-red-400 hover:bg-red-500/10 transition-all disabled:opacity-50"
             >
                 <Trash2 className="w-4 h-4" />
             </button>
