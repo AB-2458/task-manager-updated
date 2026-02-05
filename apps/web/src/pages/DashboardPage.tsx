@@ -6,7 +6,7 @@ import { Sidebar } from '../components/Sidebar';
 import { Header } from '../components/Header';
 import { TaskList } from '../components/TaskList';
 import { NoteList } from '../components/NoteList';
-import { TaskListSkeleton, NoteListSkeleton } from '../components/Skeleton';
+import { TaskListSkeleton, NoteListSkeleton, Skeleton } from '../components/Skeleton';
 
 type Tab = 'tasks' | 'notes';
 
@@ -17,20 +17,17 @@ export function DashboardPage() {
     const [isLoading, setIsLoading] = useState(true);
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
-    // Fetch data on mount
     useEffect(() => {
         fetchData();
     }, []);
 
     const fetchData = async () => {
         setIsLoading(true);
-
         try {
             const [tasksRes, notesRes] = await Promise.all([
                 api.get<Task[]>('/tasks'),
                 api.get<Note[]>('/notes'),
             ]);
-
             if (tasksRes.data) setTasks(tasksRes.data);
             if (notesRes.data) setNotes(notesRes.data);
         } catch (err) {
@@ -60,16 +57,11 @@ export function DashboardPage() {
     };
 
     const handleToggleTask = async (id: string, completed: boolean) => {
-        // Optimistic update
         setTasks(prev => prev.map(t => t.id === id ? { ...t, completed } : t));
-
         try {
             await api.patch(`/tasks/${id}`, { completed });
-            if (completed) {
-                toast.success('Task completed! 🎉');
-            }
+            if (completed) toast.success('Task completed! 🎉');
         } catch (err) {
-            // Revert on error
             setTasks(prev => prev.map(t => t.id === id ? { ...t, completed: !completed } : t));
             toast.error('Failed to update task');
             console.error('Failed to update task:', err);
@@ -77,18 +69,13 @@ export function DashboardPage() {
     };
 
     const handleDeleteTask = async (id: string) => {
-        // Optimistic update
         const taskToDelete = tasks.find(t => t.id === id);
         setTasks(prev => prev.filter(t => t.id !== id));
-
         try {
             await api.delete(`/tasks/${id}`);
             toast.success('Task deleted');
         } catch (err) {
-            // Revert on error
-            if (taskToDelete) {
-                setTasks(prev => [...prev, taskToDelete]);
-            }
+            if (taskToDelete) setTasks(prev => [...prev, taskToDelete]);
             toast.error('Failed to delete task');
             console.error('Failed to delete task:', err);
         }
@@ -109,36 +96,26 @@ export function DashboardPage() {
     };
 
     const handleUpdateNote = async (id: string, content: string) => {
-        // Optimistic update
         const originalNote = notes.find(n => n.id === id);
         setNotes(prev => prev.map(n => n.id === id ? { ...n, content } : n));
-
         try {
             await api.patch(`/notes/${id}`, { content });
             toast.success('Note updated');
         } catch (err) {
-            // Revert on error
-            if (originalNote) {
-                setNotes(prev => prev.map(n => n.id === id ? originalNote : n));
-            }
+            if (originalNote) setNotes(prev => prev.map(n => n.id === id ? originalNote : n));
             toast.error('Failed to update note');
             console.error('Failed to update note:', err);
         }
     };
 
     const handleDeleteNote = async (id: string) => {
-        // Optimistic update
         const noteToDelete = notes.find(n => n.id === id);
         setNotes(prev => prev.filter(n => n.id !== id));
-
         try {
             await api.delete(`/notes/${id}`);
             toast.success('Note deleted');
         } catch (err) {
-            // Revert on error
-            if (noteToDelete) {
-                setNotes(prev => [...prev, noteToDelete]);
-            }
+            if (noteToDelete) setNotes(prev => [...prev, noteToDelete]);
             toast.error('Failed to delete note');
             console.error('Failed to delete note:', err);
         }
@@ -147,7 +124,16 @@ export function DashboardPage() {
     const completedTasks = tasks.filter(t => t.completed).length;
 
     return (
-        <div className="min-h-screen bg-surface-900 flex">
+        <div className="min-h-screen flex">
+            {/* Background gradient */}
+            <div className="fixed inset-0 bg-gradient-to-br from-slate-900 via-slate-900 to-indigo-950 -z-10" />
+
+            {/* Subtle animated orbs in background */}
+            <div className="fixed inset-0 overflow-hidden pointer-events-none -z-10">
+                <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-indigo-500/5 rounded-full filter blur-3xl" />
+                <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-purple-500/5 rounded-full filter blur-3xl" />
+            </div>
+
             {/* Sidebar */}
             <Sidebar
                 activeTab={activeTab}
@@ -160,24 +146,28 @@ export function DashboardPage() {
             />
 
             {/* Main Content */}
-            <div className="flex-1 flex flex-col min-h-screen lg:ml-64">
+            <div className="flex-1 flex flex-col min-h-screen lg:ml-72">
                 {/* Header */}
                 <Header onMenuClick={() => setIsSidebarOpen(true)} />
 
                 {/* Content */}
-                <main className="flex-1 p-4 lg:p-8">
-                    <div className="max-w-4xl mx-auto">
+                <main className="flex-1 px-4 lg:px-8 pb-8">
+                    <div className="max-w-5xl mx-auto">
                         {isLoading ? (
-                            // Skeleton loading states
                             <div className="space-y-6 animate-fade-in">
-                                <div>
-                                    <div className="h-8 w-32 bg-surface-700 rounded animate-pulse mb-2" />
-                                    <div className="h-4 w-48 bg-surface-700 rounded animate-pulse" />
+                                {/* Header skeleton */}
+                                <div className="space-y-2">
+                                    <Skeleton className="h-9 w-40" />
+                                    <Skeleton className="h-5 w-64" />
                                 </div>
+                                {/* Content skeleton */}
                                 {activeTab === 'tasks' ? (
-                                    <TaskListSkeleton count={5} />
+                                    <>
+                                        <Skeleton className="h-24 w-full rounded-2xl" />
+                                        <TaskListSkeleton count={4} />
+                                    </>
                                 ) : (
-                                    <NoteListSkeleton count={4} />
+                                    <NoteListSkeleton count={6} />
                                 )}
                             </div>
                         ) : activeTab === 'tasks' ? (

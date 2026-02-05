@@ -1,11 +1,4 @@
-/**
- * Empty State Components
- * 
- * Friendly empty states for tasks and notes
- */
-
 import { CheckCircle2, FileText, Plus } from 'lucide-react';
-import { Button } from './Button';
 
 interface EmptyStateProps {
     title: string;
@@ -19,18 +12,19 @@ interface EmptyStateProps {
 
 export function EmptyState({ title, description, icon, action }: EmptyStateProps) {
     return (
-        <div className="flex flex-col items-center justify-center py-12 px-4 text-center animate-fade-in">
+        <div className="flex flex-col items-center justify-center py-16 px-4 text-center animate-fade-in">
             {icon && (
-                <div className="w-16 h-16 rounded-full bg-surface-800 flex items-center justify-center mb-4">
+                <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-slate-800 to-slate-700 flex items-center justify-center mb-6 border border-slate-600/30">
                     {icon}
                 </div>
             )}
-            <h3 className="text-lg font-medium text-surface-200 mb-1">{title}</h3>
-            <p className="text-surface-500 max-w-sm mb-4">{description}</p>
+            <h3 className="text-xl font-semibold text-white mb-2">{title}</h3>
+            <p className="text-slate-400 max-w-sm mb-6">{description}</p>
             {action && (
-                <Button onClick={action.onClick} leftIcon={<Plus className="w-4 h-4" />}>
+                <button onClick={action.onClick} className="btn-gradient">
+                    <Plus className="w-5 h-5" />
                     {action.label}
-                </Button>
+                </button>
             )}
         </div>
     );
@@ -39,9 +33,9 @@ export function EmptyState({ title, description, icon, action }: EmptyStateProps
 export function TasksEmptyState({ onAddTask }: { onAddTask?: () => void }) {
     return (
         <EmptyState
-            icon={<CheckCircle2 className="w-8 h-8 text-surface-500" />}
+            icon={<CheckCircle2 className="w-10 h-10 text-indigo-400" />}
             title="No tasks yet"
-            description="Create your first task to get started organizing your work."
+            description="Create your first task to start organizing your work and boost your productivity."
             action={onAddTask ? { label: 'Add Task', onClick: onAddTask } : undefined}
         />
     );
@@ -50,19 +44,11 @@ export function TasksEmptyState({ onAddTask }: { onAddTask?: () => void }) {
 export function NotesEmptyState({ onAddNote }: { onAddNote?: () => void }) {
     return (
         <EmptyState
-            icon={<FileText className="w-8 h-8 text-surface-500" />}
+            icon={<FileText className="w-10 h-10 text-purple-400" />}
             title="No notes yet"
-            description="Start writing notes to capture your ideas and thoughts."
+            description="Start capturing your ideas, thoughts, and important information."
             action={onAddNote ? { label: 'New Note', onClick: onAddNote } : undefined}
         />
-    );
-}
-
-export function CompletedTasksEmptyState() {
-    return (
-        <div className="text-center py-6 text-surface-500 text-sm">
-            <p>No completed tasks yet. Keep going! 💪</p>
-        </div>
     );
 }
 

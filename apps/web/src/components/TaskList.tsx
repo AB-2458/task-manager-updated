@@ -1,15 +1,15 @@
 import { useState, useRef } from 'react';
 import { Task, Priority } from '../types';
-import { Button } from './Button';
 import { TasksEmptyState } from './EmptyState';
 import {
     Plus,
     Check,
     Trash2,
-    Circle,
     Calendar,
     Flag,
-    AlertCircle
+    AlertTriangle,
+    Loader2,
+    ChevronDown
 } from 'lucide-react';
 
 interface TaskListProps {
@@ -19,23 +19,44 @@ interface TaskListProps {
     onDeleteTask: (id: string) => void;
 }
 
-// Priority configuration
-const priorityConfig: Record<Priority, { label: string; color: string; bgColor: string }> = {
-    low: { label: 'Low', color: 'text-surface-400', bgColor: 'bg-surface-700' },
-    medium: { label: 'Medium', color: 'text-blue-400', bgColor: 'bg-blue-500/20' },
-    high: { label: 'High', color: 'text-red-400', bgColor: 'bg-red-500/20' },
+// Priority configuration with new color scheme
+const priorityConfig: Record<Priority, {
+    label: string;
+    color: string;
+    bgColor: string;
+    borderColor: string;
+    btnClass: string;
+}> = {
+    low: {
+        label: 'Low',
+        color: 'text-blue-400',
+        bgColor: 'bg-blue-500/15',
+        borderColor: 'border-blue-500/30',
+        btnClass: 'priority-btn-low'
+    },
+    medium: {
+        label: 'Medium',
+        color: 'text-amber-400',
+        bgColor: 'bg-amber-500/15',
+        borderColor: 'border-amber-500/30',
+        btnClass: 'priority-btn-medium'
+    },
+    high: {
+        label: 'High',
+        color: 'text-red-400',
+        bgColor: 'bg-red-500/15',
+        borderColor: 'border-red-500/30',
+        btnClass: 'priority-btn-high'
+    },
 };
 
-// Check if a task is overdue
 function isOverdue(dueDate: string | null, completed: boolean): boolean {
     if (!dueDate || completed) return false;
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    const due = new Date(dueDate);
-    return due < today;
+    return new Date(dueDate) < today;
 }
 
-// Format due date for display
 function formatDueDate(dueDate: string | null): string {
     if (!dueDate) return '';
     const date = new Date(dueDate);
@@ -62,11 +83,7 @@ export function TaskList({ tasks, onCreateTask, onToggleTask, onDeleteTask }: Ta
         e.preventDefault();
         if (newTaskTitle.trim()) {
             setIsCreating(true);
-            await onCreateTask(
-                newTaskTitle.trim(),
-                newTaskDueDate || undefined,
-                newTaskPriority
-            );
+            await onCreateTask(newTaskTitle.trim(), newTaskDueDate || undefined, newTaskPriority);
             setNewTaskTitle('');
             setNewTaskDueDate('');
             setNewTaskPriority('medium');
@@ -79,22 +96,19 @@ export function TaskList({ tasks, onCreateTask, onToggleTask, onDeleteTask }: Ta
     const pendingTasks = tasks.filter(t => !t.completed);
     const completedTasks = tasks.filter(t => t.completed);
 
-    // Sort pending tasks: overdue first, then by due date, then by priority
+    // Sort: overdue first, then by due date, then priority
     const sortedPendingTasks = [...pendingTasks].sort((a, b) => {
-        // Overdue tasks first
         const aOverdue = isOverdue(a.due_date, a.completed);
         const bOverdue = isOverdue(b.due_date, b.completed);
         if (aOverdue && !bOverdue) return -1;
         if (!aOverdue && bOverdue) return 1;
 
-        // Then by due date (earlier dates first, null dates last)
         if (a.due_date && b.due_date) {
             return new Date(a.due_date).getTime() - new Date(b.due_date).getTime();
         }
         if (a.due_date && !b.due_date) return -1;
         if (!a.due_date && b.due_date) return 1;
 
-        // Then by priority
         const priorityOrder = { high: 0, medium: 1, low: 2 };
         return priorityOrder[a.priority] - priorityOrder[b.priority];
     });
@@ -103,100 +117,114 @@ export function TaskList({ tasks, onCreateTask, onToggleTask, onDeleteTask }: Ta
         <div className="space-y-6 animate-fade-in">
             {/* Header */}
             <div>
-                <h1 className="text-2xl font-bold text-surface-100">Tasks</h1>
-                <p className="text-surface-400 mt-1">
-                    {pendingTasks.length} pending, {completedTasks.length} completed
-                </p>
+                <h1 className="text-3xl font-bold text-white mb-1">
+                    Tasks
+                    <span className="ml-3 text-lg font-normal text-slate-500">
+                        {pendingTasks.length} pending
+                    </span>
+                </h1>
+                <p className="text-slate-400">Manage and organize your tasks</p>
             </div>
 
             {/* Add Task Form */}
-            <form onSubmit={handleSubmit} className="space-y-3">
-                <div className="flex gap-2">
-                    <input
-                        ref={inputRef}
-                        type="text"
-                        value={newTaskTitle}
-                        onChange={(e) => setNewTaskTitle(e.target.value)}
-                        onFocus={() => setShowOptions(true)}
-                        placeholder="Add a new task..."
-                        className="input flex-1"
-                        disabled={isCreating}
-                    />
-                    <Button
-                        type="submit"
-                        isLoading={isCreating}
-                        loadingText="Adding..."
-                        disabled={!newTaskTitle.trim()}
-                        leftIcon={<Plus className="w-4 h-4" />}
-                    >
-                        <span className="hidden sm:inline">Add Task</span>
-                        <span className="sm:hidden">Add</span>
-                    </Button>
-                </div>
-
-                {/* Optional fields */}
-                {showOptions && (
-                    <div className="flex flex-wrap gap-3 animate-fade-in">
-                        {/* Due Date */}
-                        <div className="flex items-center gap-2">
-                            <Calendar className="w-4 h-4 text-surface-500" />
-                            <input
-                                type="date"
-                                value={newTaskDueDate}
-                                onChange={(e) => setNewTaskDueDate(e.target.value)}
-                                className="input py-1.5 px-2 text-sm w-auto"
-                                disabled={isCreating}
-                            />
-                        </div>
-
-                        {/* Priority */}
-                        <div className="flex items-center gap-1.5">
-                            <Flag className="w-4 h-4 text-surface-500" />
-                            {(['low', 'medium', 'high'] as Priority[]).map((p) => (
-                                <button
-                                    key={p}
-                                    type="button"
-                                    onClick={() => setNewTaskPriority(p)}
-                                    className={`
-                    px-2.5 py-1 text-xs font-medium rounded-md transition-all
-                    ${newTaskPriority === p
-                                            ? `${priorityConfig[p].bgColor} ${priorityConfig[p].color}`
-                                            : 'bg-surface-700 text-surface-400 hover:bg-surface-600'
-                                        }
-                  `}
-                                >
-                                    {priorityConfig[p].label}
-                                </button>
-                            ))}
-                        </div>
+            <div className="glass-card rounded-2xl p-5">
+                <form onSubmit={handleSubmit} className="space-y-4">
+                    <div className="flex gap-3">
+                        <input
+                            ref={inputRef}
+                            type="text"
+                            value={newTaskTitle}
+                            onChange={(e) => setNewTaskTitle(e.target.value)}
+                            onFocus={() => setShowOptions(true)}
+                            placeholder="What needs to be done?"
+                            className="input-modern flex-1"
+                            disabled={isCreating}
+                        />
+                        <button
+                            type="submit"
+                            disabled={!newTaskTitle.trim() || isCreating}
+                            className="btn-gradient px-6"
+                        >
+                            {isCreating ? (
+                                <Loader2 className="w-5 h-5 animate-spin" />
+                            ) : (
+                                <>
+                                    <Plus className="w-5 h-5" />
+                                    <span className="hidden sm:inline">Add Task</span>
+                                </>
+                            )}
+                        </button>
                     </div>
-                )}
-            </form>
 
-            {/* Tasks List */}
-            <div className="space-y-2">
-                {tasks.length === 0 ? (
-                    <TasksEmptyState onAddTask={() => inputRef.current?.focus()} />
-                ) : (
-                    <>
-                        {/* Pending Tasks */}
-                        {sortedPendingTasks.map((task) => (
-                            <TaskItem
-                                key={task.id}
-                                task={task}
-                                onToggle={() => onToggleTask(task.id, true)}
-                                onDelete={() => onDeleteTask(task.id)}
-                            />
-                        ))}
+                    {/* Options */}
+                    {showOptions && (
+                        <div className="flex flex-wrap items-center gap-4 pt-2 animate-slide-down">
+                            {/* Due Date */}
+                            <div className="flex items-center gap-2">
+                                <Calendar className="w-4 h-4 text-slate-500" />
+                                <input
+                                    type="date"
+                                    value={newTaskDueDate}
+                                    onChange={(e) => setNewTaskDueDate(e.target.value)}
+                                    className="input-modern py-2 px-3 text-sm w-auto"
+                                    disabled={isCreating}
+                                />
+                            </div>
 
-                        {/* Completed Tasks */}
-                        {completedTasks.length > 0 && (
-                            <div className="pt-4">
-                                <h3 className="text-sm font-medium text-surface-500 mb-2">
-                                    Completed ({completedTasks.length})
-                                </h3>
+                            {/* Priority */}
+                            <div className="flex items-center gap-2">
+                                <Flag className="w-4 h-4 text-slate-500" />
+                                {(['low', 'medium', 'high'] as Priority[]).map((p) => (
+                                    <button
+                                        key={p}
+                                        type="button"
+                                        onClick={() => setNewTaskPriority(p)}
+                                        className={`priority-btn ${priorityConfig[p].btnClass} ${newTaskPriority === p ? 'active' : ''}`}
+                                    >
+                                        {priorityConfig[p].label}
+                                    </button>
+                                ))}
+                            </div>
+
+                            {/* Collapse */}
+                            <button
+                                type="button"
+                                onClick={() => setShowOptions(false)}
+                                className="ml-auto text-slate-500 hover:text-slate-300 transition-colors"
+                            >
+                                <ChevronDown className="w-5 h-5" />
+                            </button>
+                        </div>
+                    )}
+                </form>
+            </div>
+
+            {/* Task List */}
+            {tasks.length === 0 ? (
+                <TasksEmptyState onAddTask={() => inputRef.current?.focus()} />
+            ) : (
+                <div className="space-y-3">
+                    {/* Pending Tasks */}
+                    {sortedPendingTasks.map((task, index) => (
+                        <TaskCard
+                            key={task.id}
+                            task={task}
+                            onToggle={() => onToggleTask(task.id, true)}
+                            onDelete={() => onDeleteTask(task.id)}
+                            style={{ animationDelay: `${index * 50}ms` }}
+                        />
+                    ))}
+
+                    {/* Completed Section */}
+                    {completedTasks.length > 0 && (
+                        <div className="pt-6">
+                            <h3 className="text-sm font-medium text-slate-500 mb-3 flex items-center gap-2">
+                                <Check className="w-4 h-4" />
+                                Completed ({completedTasks.length})
+                            </h3>
+                            <div className="space-y-2">
                                 {completedTasks.map((task) => (
-                                    <TaskItem
+                                    <TaskCard
                                         key={task.id}
                                         task={task}
                                         onToggle={() => onToggleTask(task.id, false)}
@@ -204,22 +232,22 @@ export function TaskList({ tasks, onCreateTask, onToggleTask, onDeleteTask }: Ta
                                     />
                                 ))}
                             </div>
-                        )}
-                    </>
-                )}
-            </div>
+                        </div>
+                    )}
+                </div>
+            )}
         </div>
     );
 }
 
-interface TaskItemProps {
+interface TaskCardProps {
     task: Task;
     onToggle: () => void;
     onDelete: () => void;
+    style?: React.CSSProperties;
 }
 
-function TaskItem({ task, onToggle, onDelete }: TaskItemProps) {
-    const [isHovered, setIsHovered] = useState(false);
+function TaskCard({ task, onToggle, onDelete, style }: TaskCardProps) {
     const [isDeleting, setIsDeleting] = useState(false);
 
     const handleDelete = async () => {
@@ -233,85 +261,80 @@ function TaskItem({ task, onToggle, onDelete }: TaskItemProps) {
     return (
         <div
             className={`
-        group flex items-start gap-3 p-3 rounded-lg border transition-all duration-150
-        ${task.completed
-                    ? 'bg-surface-800/50 border-surface-700'
-                    : overdue
-                        ? 'bg-red-500/5 border-red-500/30 hover:border-red-500/50'
-                        : 'bg-surface-800 border-surface-700 hover:border-surface-600 card-hover'
-                }
-        ${isDeleting ? 'opacity-50 pointer-events-none' : ''}
+        group card-modern p-4 animate-slide-up
+        ${task.completed ? 'opacity-60' : ''}
+        ${overdue ? 'border-red-500/30 bg-red-500/5' : ''}
+        ${isDeleting ? 'opacity-50 pointer-events-none scale-95' : ''}
       `}
-            onMouseEnter={() => setIsHovered(true)}
-            onMouseLeave={() => setIsHovered(false)}
+            style={style}
         >
-            {/* Checkbox */}
-            <button
-                onClick={onToggle}
-                className={`
-          flex-shrink-0 w-5 h-5 rounded-full border-2 flex items-center justify-center mt-0.5
-          transition-all duration-150
-          ${task.completed
-                        ? 'bg-primary-600 border-primary-600 text-white'
-                        : 'border-surface-500 hover:border-primary-500'
-                    }
-        `}
-            >
-                {task.completed ? (
-                    <Check className="w-3 h-3" />
-                ) : isHovered ? (
-                    <Circle className="w-3 h-3 text-surface-500" />
-                ) : null}
-            </button>
+            <div className="flex items-start gap-4">
+                {/* Checkbox */}
+                <button
+                    onClick={onToggle}
+                    className={`
+            checkbox-modern mt-0.5
+            ${task.completed ? 'checked' : ''}
+          `}
+                >
+                    {task.completed && <Check className="w-3 h-3 text-white" />}
+                </button>
 
-            {/* Content */}
-            <div className="flex-1 min-w-0">
-                {/* Title */}
-                <span className={`
-          block text-sm transition-colors
-          ${task.completed ? 'text-surface-500 line-through' : 'text-surface-200'}
-        `}>
-                    {task.title}
-                </span>
+                {/* Content */}
+                <div className="flex-1 min-w-0">
+                    <p className={`
+            text-base font-medium transition-colors
+            ${task.completed ? 'text-slate-500 line-through' : 'text-white'}
+          `}>
+                        {task.title}
+                    </p>
 
-                {/* Meta info (due date + priority) */}
-                {!task.completed && (task.due_date || task.priority !== 'medium') && (
-                    <div className="flex items-center gap-2 mt-1.5">
-                        {/* Due date */}
-                        {task.due_date && (
-                            <span className={`
-                inline-flex items-center gap-1 text-xs
-                ${overdue ? 'text-red-400' : 'text-surface-500'}
-              `}>
-                                {overdue && <AlertCircle className="w-3 h-3" />}
-                                <Calendar className="w-3 h-3" />
-                                {formatDueDate(task.due_date)}
-                                {overdue && <span className="font-medium">Overdue</span>}
-                            </span>
-                        )}
+                    {/* Meta */}
+                    {!task.completed && (task.due_date || task.priority !== 'medium') && (
+                        <div className="flex items-center gap-3 mt-2">
+                            {/* Due Date */}
+                            {task.due_date && (
+                                <span className={`
+                  inline-flex items-center gap-1.5 text-xs font-medium
+                  ${overdue ? 'text-red-400' : 'text-slate-400'}
+                `}>
+                                    {overdue ? (
+                                        <AlertTriangle className="w-3.5 h-3.5" />
+                                    ) : (
+                                        <Calendar className="w-3.5 h-3.5" />
+                                    )}
+                                    {formatDueDate(task.due_date)}
+                                    {overdue && <span className="text-red-400">• Overdue</span>}
+                                </span>
+                            )}
 
-                        {/* Priority indicator (only show for non-medium) */}
-                        {task.priority !== 'medium' && (
-                            <span className={`
-                inline-flex items-center gap-1 text-xs px-1.5 py-0.5 rounded
-                ${priorityCfg.bgColor} ${priorityCfg.color}
-              `}>
-                                <Flag className="w-3 h-3" />
-                                {priorityCfg.label}
-                            </span>
-                        )}
-                    </div>
-                )}
+                            {/* Priority Badge */}
+                            {task.priority !== 'medium' && (
+                                <span className={`
+                  inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-md
+                  ${priorityCfg.bgColor} ${priorityCfg.color} border ${priorityCfg.borderColor}
+                `}>
+                                    <Flag className="w-3 h-3" />
+                                    {priorityCfg.label}
+                                </span>
+                            )}
+                        </div>
+                    )}
+                </div>
+
+                {/* Delete */}
+                <button
+                    onClick={handleDelete}
+                    disabled={isDeleting}
+                    className="opacity-0 group-hover:opacity-100 p-2 rounded-xl text-slate-500 hover:text-red-400 hover:bg-red-500/10 transition-all"
+                >
+                    {isDeleting ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                        <Trash2 className="w-4 h-4" />
+                    )}
+                </button>
             </div>
-
-            {/* Delete button */}
-            <button
-                onClick={handleDelete}
-                disabled={isDeleting}
-                className="opacity-0 group-hover:opacity-100 p-1.5 rounded text-surface-500 hover:text-red-400 hover:bg-red-500/10 transition-all disabled:opacity-50"
-            >
-                <Trash2 className="w-4 h-4" />
-            </button>
         </div>
     );
 }

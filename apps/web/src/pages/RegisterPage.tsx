@@ -2,8 +2,7 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { useAuth } from '../context/AuthContext';
-import { Button } from '../components/Button';
-import { UserPlus, Mail, Lock, AlertCircle, CheckCircle } from 'lucide-react';
+import { Mail, Lock, ArrowRight, Loader2, CheckCircle, UserPlus } from 'lucide-react';
 
 export function RegisterPage() {
     const [email, setEmail] = useState('');
@@ -20,13 +19,11 @@ export function RegisterPage() {
         e.preventDefault();
         setError(null);
 
-        // Validate passwords match
         if (password !== confirmPassword) {
             setError('Passwords do not match');
             return;
         }
 
-        // Validate password length
         if (password.length < 6) {
             setError('Password must be at least 6 characters');
             return;
@@ -42,68 +39,78 @@ export function RegisterPage() {
         } else {
             setSuccess(true);
             toast.success('Account created successfully!');
-            // Auto navigate after showing success
-            setTimeout(() => {
-                navigate('/login');
-            }, 2000);
+            setTimeout(() => navigate('/login'), 2000);
         }
     };
 
     if (success) {
         return (
-            <div className="min-h-screen flex items-center justify-center bg-surface-900 px-4">
-                <div className="w-full max-w-md text-center animate-fade-in">
-                    <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-green-500/20 mb-4">
-                        <CheckCircle className="w-8 h-8 text-green-500" />
+            <div className="min-h-screen flex items-center justify-center px-4 overflow-hidden">
+                <div className="animated-bg">
+                    <div className="orb orb-1" />
+                    <div className="orb orb-2" />
+                    <div className="orb orb-3" />
+                </div>
+
+                <div className="relative z-10 text-center animate-scale-in">
+                    <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-gradient-to-br from-green-400 to-emerald-500 mb-6 animate-pulse-glow">
+                        <CheckCircle className="w-10 h-10 text-white" />
                     </div>
-                    <h1 className="text-2xl font-bold text-surface-100">Account created!</h1>
-                    <p className="text-surface-400 mt-2">
-                        Please check your email to verify your account.
-                    </p>
-                    <p className="text-surface-500 text-sm mt-4">
-                        Redirecting to login...
-                    </p>
+                    <h1 className="text-3xl font-bold text-white mb-3">Account Created!</h1>
+                    <p className="text-slate-400 mb-2">Please check your email to verify your account.</p>
+                    <p className="text-slate-500 text-sm">Redirecting to login...</p>
                 </div>
             </div>
         );
     }
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-surface-900 px-4">
-            <div className="w-full max-w-md animate-fade-in">
-                {/* Logo/Header */}
+        <div className="min-h-screen flex items-center justify-center px-4 overflow-hidden">
+            {/* Animated Background */}
+            <div className="animated-bg">
+                <div className="orb orb-1" />
+                <div className="orb orb-2" />
+                <div className="orb orb-3" />
+            </div>
+
+            {/* Content */}
+            <div className="relative z-10 w-full max-w-md animate-slide-up">
+                {/* Logo */}
                 <div className="text-center mb-8">
-                    <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-primary-600 mb-4">
-                        <UserPlus className="w-6 h-6 text-white" />
+                    <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 mb-4 animate-pulse-glow">
+                        <UserPlus className="w-8 h-8 text-white" />
                     </div>
-                    <h1 className="text-2xl font-bold text-surface-100">Create account</h1>
-                    <p className="text-surface-400 mt-1">Start organizing your tasks</p>
+                    <h1 className="text-3xl font-bold text-white mb-2">Create account</h1>
+                    <p className="text-slate-400">Start organizing your tasks today</p>
                 </div>
 
-                {/* Form Card */}
-                <div className="card p-6">
-                    <form onSubmit={handleSubmit} className="space-y-4">
+                {/* Glass Card */}
+                <div className="glass-card rounded-2xl p-8">
+                    <form onSubmit={handleSubmit} className="space-y-5">
                         {/* Error Alert */}
                         {error && (
-                            <div className="flex items-center gap-2 p-3 text-sm text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg animate-fade-in">
-                                <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                            <div className="flex items-center gap-3 p-4 text-sm rounded-xl animate-scale-in"
+                                style={{
+                                    background: 'rgba(239, 68, 68, 0.1)',
+                                    border: '1px solid rgba(239, 68, 68, 0.3)',
+                                    color: '#fca5a5'
+                                }}>
+                                <div className="w-2 h-2 rounded-full bg-red-400 animate-pulse" />
                                 <span>{error}</span>
                             </div>
                         )}
 
                         {/* Email Field */}
                         <div>
-                            <label htmlFor="email" className="label">
-                                Email
-                            </label>
+                            <label htmlFor="email" className="label-modern">Email address</label>
                             <div className="relative">
-                                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-surface-500" />
+                                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500" />
                                 <input
                                     id="email"
                                     type="email"
                                     value={email}
                                     onChange={(e) => setEmail(e.target.value)}
-                                    className="input pl-10"
+                                    className="input-modern pl-12"
                                     placeholder="you@example.com"
                                     required
                                     autoComplete="email"
@@ -113,41 +120,35 @@ export function RegisterPage() {
 
                         {/* Password Field */}
                         <div>
-                            <label htmlFor="password" className="label">
-                                Password
-                            </label>
+                            <label htmlFor="password" className="label-modern">Password</label>
                             <div className="relative">
-                                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-surface-500" />
+                                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500" />
                                 <input
                                     id="password"
                                     type="password"
                                     value={password}
                                     onChange={(e) => setPassword(e.target.value)}
-                                    className="input pl-10"
+                                    className="input-modern pl-12"
                                     placeholder="••••••••"
                                     required
                                     autoComplete="new-password"
                                     minLength={6}
                                 />
                             </div>
-                            <p className="text-xs text-surface-500 mt-1">
-                                Must be at least 6 characters
-                            </p>
+                            <p className="text-xs text-slate-500 mt-2">Must be at least 6 characters</p>
                         </div>
 
                         {/* Confirm Password Field */}
                         <div>
-                            <label htmlFor="confirmPassword" className="label">
-                                Confirm Password
-                            </label>
+                            <label htmlFor="confirmPassword" className="label-modern">Confirm Password</label>
                             <div className="relative">
-                                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-surface-500" />
+                                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500" />
                                 <input
                                     id="confirmPassword"
                                     type="password"
                                     value={confirmPassword}
                                     onChange={(e) => setConfirmPassword(e.target.value)}
-                                    className="input pl-10"
+                                    className="input-modern pl-12"
                                     placeholder="••••••••"
                                     required
                                     autoComplete="new-password"
@@ -156,24 +157,48 @@ export function RegisterPage() {
                         </div>
 
                         {/* Submit Button */}
-                        <Button
+                        <button
                             type="submit"
-                            isLoading={isLoading}
-                            loadingText="Creating account..."
-                            className="w-full py-2.5"
+                            disabled={isLoading}
+                            className="btn-gradient w-full py-3 text-base"
                         >
-                            Create account
-                        </Button>
+                            {isLoading ? (
+                                <>
+                                    <Loader2 className="w-5 h-5 animate-spin" />
+                                    Creating account...
+                                </>
+                            ) : (
+                                <>
+                                    Create account
+                                    <ArrowRight className="w-5 h-5" />
+                                </>
+                            )}
+                        </button>
                     </form>
 
-                    {/* Login Link */}
-                    <div className="mt-6 text-center text-sm text-surface-400">
-                        Already have an account?{' '}
-                        <Link to="/login" className="text-primary-400 hover:text-primary-300 font-medium transition-colors">
-                            Sign in
-                        </Link>
+                    {/* Divider */}
+                    <div className="relative my-6">
+                        <div className="absolute inset-0 flex items-center">
+                            <div className="w-full border-t border-slate-700" />
+                        </div>
+                        <div className="relative flex justify-center text-sm">
+                            <span className="px-4 bg-slate-800/50 text-slate-500">Already have an account?</span>
+                        </div>
                     </div>
+
+                    {/* Login Link */}
+                    <Link
+                        to="/login"
+                        className="btn-secondary w-full justify-center py-3"
+                    >
+                        Sign in instead
+                    </Link>
                 </div>
+
+                {/* Footer */}
+                <p className="text-center text-slate-500 text-sm mt-6">
+                    By signing up, you agree to our Terms of Service
+                </p>
             </div>
         </div>
     );
