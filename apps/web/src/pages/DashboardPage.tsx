@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
 import { api } from '../lib/api';
-import { Task, Note } from '../types';
+import { Task, Note, Priority } from '../types';
 import { Sidebar } from '../components/Sidebar';
 import { Header } from '../components/Header';
 import { TaskList } from '../components/TaskList';
@@ -42,9 +42,13 @@ export function DashboardPage() {
     };
 
     // Task handlers
-    const handleCreateTask = async (title: string) => {
+    const handleCreateTask = async (title: string, dueDate?: string, priority?: Priority) => {
         try {
-            const res = await api.post<Task>('/tasks', { title });
+            const res = await api.post<Task>('/tasks', {
+                title,
+                due_date: dueDate || null,
+                priority: priority || 'medium',
+            });
             if (res.data) {
                 setTasks(prev => [res.data!, ...prev]);
                 toast.success('Task created');

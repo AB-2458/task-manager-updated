@@ -81,6 +81,9 @@ router.get('/:id', asyncHandler(async (req, res) => {
   });
 }));
 
+// Valid priority values
+const VALID_PRIORITIES = ['low', 'medium', 'high'];
+
 /**
  * POST /tasks
  * 
@@ -89,14 +92,16 @@ router.get('/:id', asyncHandler(async (req, res) => {
  * Request body:
  * - title: string (required) - The task title
  * - completed: boolean (optional) - Completion status, defaults to false
+ * - due_date: string (optional) - Due date in ISO format (YYYY-MM-DD)
+ * - priority: string (optional) - Priority level: low, medium, high (default: medium)
  * 
  * SECURITY: user_id is set from JWT, not from request body
  */
 router.post('/', asyncHandler(async (req, res) => {
   const userId = req.userId; // From verified JWT - TRUSTED
-  const { title, completed = false } = req.body;
+  const { title, completed = false, due_date, priority = 'medium' } = req.body;
 
-  // Validate input
+  // Validate title
   if (!title || typeof title !== 'string') {
     return res.status(400).json({
       error: 'Validation Error',
@@ -118,6 +123,28 @@ router.post('/', asyncHandler(async (req, res) => {
     });
   }
 
+  // Validate priority
+  if (priority && !VALID_PRIORITIES.includes(priority)) {
+    return res.status(400).json({
+      error: 'Validation Error',
+      message: `Priority must be one of: ${VALID_PRIORITIES.join(', ')}`,
+    });
+  }
+
+  // Validate due_date format if provided
+  let parsedDueDate = null;
+  if (due_date) {
+    parsedDueDate = new Date(due_date);
+    if (isNaN(parsedDueDate.getTime())) {
+      return res.status(400).json({
+        error: 'Validation Error',
+        message: 'Invalid due date format. Use YYYY-MM-DD',
+      });
+    }
+    // Convert to ISO date string for database
+    parsedDueDate = parsedDueDate.toISOString().split('T')[0];
+  }
+
   // Create the task
   // SECURITY: user_id comes from JWT, not request body
   const { data: task, error } = await supabaseAdmin
@@ -126,6 +153,8 @@ router.post('/', asyncHandler(async (req, res) => {
       user_id: userId, // TRUSTED - from JWT
       title: title.trim(),
       completed: Boolean(completed),
+      due_date: parsedDueDate,
+      priority: priority || 'medium',
     })
     .select()
     .single();
@@ -154,11 +183,13 @@ router.post('/', asyncHandler(async (req, res) => {
  * Request body (all optional):
  * - title: string - The task title
  * - completed: boolean - Completion status
+ * - due_date: string|null - Due date in ISO format (YYYY-MM-DD), or null to clear
+ * - priority: string - Priority level: low, medium, high
  */
 router.patch('/:id', asyncHandler(async (req, res) => {
   const userId = req.userId;
   const taskId = req.params.id;
-  const { title, completed } = req.body;
+  const { title, completed, due_date, priority } = req.body;
 
   // Build update object
   const updates = {};
@@ -181,6 +212,33 @@ router.patch('/:id', asyncHandler(async (req, res) => {
 
   if (completed !== undefined) {
     updates.completed = Boolean(completed);
+  }
+
+  // Handle due_date - can be set, updated, or cleared (null)
+  if (due_date !== undefined) {
+    if (due_date === null) {
+      updates.due_date = null;
+    } else {
+      const parsedDate = new Date(due_date);
+      if (isNaN(parsedDate.getTime())) {
+        return res.status(400).json({
+          error: 'Validation Error',
+          message: 'Invalid due date format. Use YYYY-MM-DD',
+        });
+      }
+      updates.due_date = parsedDate.toISOString().split('T')[0];
+    }
+  }
+
+  // Handle priority
+  if (priority !== undefined) {
+    if (!VALID_PRIORITIES.includes(priority)) {
+      return res.status(400).json({
+        error: 'Validation Error',
+        message: `Priority must be one of: ${VALID_PRIORITIES.join(', ')}`,
+      });
+    }
+    updates.priority = priority;
   }
 
   if (Object.keys(updates).length === 0) {
